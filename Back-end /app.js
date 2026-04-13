@@ -67,8 +67,29 @@ app.post('/customers/register', async (req, res) => {
     }
 });
 
-/* */
+/*path that allows the user to login to their account using username and password */
+app.post('/customers/login', async (req, res) => {
+    const {username, password} = req.body;
+    try{
+      const userResult = await pool.query(
+        'SELECT * FROM customers WHERE username = $1',
+        [username]);
+      if(userResult.rows.length === 0){
+        return res.status(401).send('Invalid username or password');
+      }
+      
+      const user = userResult.rows[0];
 
+      const isMatch = await bcrypt.compare(password, user.password);
+      if(!isMatch){
+        return res.status(401).send('Invalid username or password');
+      }
+      res.send(`Welcome back, ${username}!`);
+    }catch(err){
+       console.error(err.message);
+       res.status(500).send('Server Error');
+    }
+});
 
 
 /*Reviews routes*/
