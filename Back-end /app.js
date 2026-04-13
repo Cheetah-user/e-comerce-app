@@ -11,6 +11,7 @@ const pool = new Pool({
     database: process.env.DB_NAME,
     password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT,
+    ssl: false
 });
 
 app.use(express.json());
@@ -40,6 +41,7 @@ app.get('/payments', (req, res) => {
 
 });
 
+
 /*Customers routes*/
 app.get('/customers', (req, res,) => {
   res.send();
@@ -47,14 +49,14 @@ app.get('/customers', (req, res,) => {
 
 /*path lets the user register with name, email, and a password(which is encrypted) and sends a message if successful */
 app.post('/customers/register', async (req, res) => {
-    const {name, email, password} = req.body;
+    const {username, email, password} = req.body;
     try{
        const saltRounds = 10;
        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
        await pool.query(
-        'INSERT INTO customers (name, email, password) VALUES ($1, $2, $3)',
-        [name, email, hashedPassword]
+        'INSERT INTO customers (username, email, password) VALUES ($1, $2, $3)',
+        [username, email, hashedPassword]
        );
       res.send('User registered!');
     }catch(err){
@@ -66,6 +68,7 @@ app.post('/customers/register', async (req, res) => {
 });
 
 /* */
+
 
 
 /*Reviews routes*/
