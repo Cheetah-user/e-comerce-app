@@ -67,16 +67,41 @@ app.post('/login', async (req, res) => {
 });
 
 
-
-/*Category routes */
-app.get('/categories', (req, res) => {
-  res.send();
-});
-
 /*Products routes*/
-app.get('/products', (req, res) => {
-
+/*Gets products by their id */
+app.get('/products/:id', async (req, res) => {
+  const productId = req.params.id;
+  try{
+   const productResult = await pool.query(
+    'SELECT * FROM products WHERE id = $1', [productId]
+   );
+   if(!productResult.rows[0]){
+    return res.status(404).send('Error. Product does not exist')
+   }
+   res.send(productResult.rows[0]);
+  }catch(err){
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 });
+
+/*Retrieves all products of a certain category */
+app.get('/products', async (req, res) => {
+  const categoryId = req.query.category;
+  try{
+   const categoryResult = await pool.query(
+    'SELECT * FROM products WHERE category_id = $1', [categoryId]
+   );
+   if(!categoryResult.rows === 0){
+     return res.status(404).send('Error. Category does not exist')
+   }
+   res.send(categoryResult.rows);
+  }catch(err){
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 
 /*Orders routes*/
 app.get('/orders', (req, res) => {
