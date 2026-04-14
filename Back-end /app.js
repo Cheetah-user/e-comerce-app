@@ -67,6 +67,7 @@ app.post('/login', async (req, res) => {
 });
 
 
+
 /*Products routes*/
 /*Gets products by their id */
 app.get('/products/:id', async (req, res) => {
@@ -92,7 +93,7 @@ app.get('/products', async (req, res) => {
    const categoryResult = await pool.query(
     'SELECT * FROM products WHERE category_id = $1', [categoryId]
    );
-   if(!categoryResult.rows === 0){
+   if(categoryResult.rows.length === 0){
      return res.status(404).send('Error. Category does not exist')
    }
    res.send(categoryResult.rows);
@@ -103,6 +104,27 @@ app.get('/products', async (req, res) => {
 });
 
 
+
+/*Customers routes*/
+/*Retrieves all customers */
+app.get('/customers', async (req, res,) => {
+  try{
+    const customers = await pool.query(
+      'SELECT * FROM customers'
+    );
+    if(customers.rows.length === 0){
+      return res.status(404).send('Error. Customers do not exist')
+    }
+    res.send(customers.rows);
+  }catch(err){
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+
+
+
 /*Orders routes*/
 app.get('/orders', (req, res) => {
 
@@ -111,12 +133,6 @@ app.get('/orders', (req, res) => {
 /*Payments routes */
 app.get('/payments', (req, res) => {
 
-});
-
-
-/*Customers routes*/
-app.get('/customers', (req, res,) => {
-  res.send();
 });
 
 
