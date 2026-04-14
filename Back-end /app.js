@@ -21,6 +21,53 @@ app.get('/', (req, res) => {
     res.send('Hello World!')
 });
 
+/*Register and login path */
+/*path lets the user register with name, email, and a password(which is encrypted) and sends a message if successful */
+app.post('/register', async (req, res) => {
+    const {username, email, password} = req.body;
+    try{
+       const saltRounds = 10;
+       const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+       await pool.query(
+        'INSERT INTO customers (username, email, password) VALUES ($1, $2, $3)',
+        [username, email, hashedPassword]
+       );
+      res.send('User registered!');
+    }catch(err){
+       if(err.code === '23505'){
+        return res.status(400).send('Error, user with that email already exists')
+       }
+       res.status(500).send('Server Error');
+    }
+});
+
+/*path that allows the user to login to their account using username and password */
+app.post('/login', async (req, res) => {
+    const {username, password} = req.body;
+    try{
+      const userResult = await pool.query(
+        'SELECT * FROM customers WHERE username = $1',
+        [username]);
+      if(userResult.rows.length === 0){
+        return res.status(401).send('Invalid username or password');
+      }
+      
+      const user = userResult.rows[0];
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if(!isMatch){
+        return res.status(401).send('Invalid username or password');
+      }
+      res.send(`Welcome back, ${username}!`);
+    }catch(err){
+       console.error(err.message);
+       res.status(500).send('Server Error');
+    }
+});
+
+
+
 /*Category routes */
 app.get('/categories', (req, res) => {
   res.send();
@@ -45,50 +92,6 @@ app.get('/payments', (req, res) => {
 /*Customers routes*/
 app.get('/customers', (req, res,) => {
   res.send();
-});
-
-/*path lets the user register with name, email, and a password(which is encrypted) and sends a message if successful */
-app.post('/customers/register', async (req, res) => {
-    const {username, email, password} = req.body;
-    try{
-       const saltRounds = 10;
-       const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-       await pool.query(
-        'INSERT INTO customers (username, email, password) VALUES ($1, $2, $3)',
-        [username, email, hashedPassword]
-       );
-      res.send('User registered!');
-    }catch(err){
-       if(err.code === '23505'){
-        return res.status(400).send('Error, user with that email already exists')
-       }
-       res.status(500).send('Server Error');
-    }
-});
-
-/*path that allows the user to login to their account using username and password */
-app.post('/customers/login', async (req, res) => {
-    const {username, password} = req.body;
-    try{
-      const userResult = await pool.query(
-        'SELECT * FROM customers WHERE username = $1',
-        [username]);
-      if(userResult.rows.length === 0){
-        return res.status(401).send('Invalid username or password');
-      }
-      
-      const user = userResult.rows[0];
-
-      const isMatch = await bcrypt.compare(password, user.password);
-      if(!isMatch){
-        return res.status(401).send('Invalid username or password');
-      }
-      res.send(`Welcome back, ${username}!`);
-    }catch(err){
-       console.error(err.message);
-       res.status(500).send('Server Error');
-    }
 });
 
 
