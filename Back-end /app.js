@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -59,7 +60,13 @@ app.post('/login', async (req, res) => {
       if(!isMatch){
         return res.status(401).send('Invalid username or password');
       }
-      res.send(`Welcome back, ${username}!`);
+//Added jwt so it is more secure, so confirms it truly is that user.
+      const token = jwt.sign(
+        {id: user.id, username: user.username},
+        process.env.JWT_SECRET,
+        {expiresIn: '1h'}
+      );
+      res.json({message:`Welcome back, ${username}!`, token: token});
     }catch(err){
        console.error(err.message);
        res.status(500).send('Server Error');
