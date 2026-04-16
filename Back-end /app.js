@@ -17,6 +17,26 @@ const pool = new Pool({
 
 app.use(express.json());
 
+//JWT middleware 
+const verifyToken = (req, res, next) => {
+  //reads authorization header from incomming request
+    const authHeader = req.headers['authorization'];
+  //extracts the token 
+   const token = authHeader && authHeader.split(' ')[1];
+  //checks if token exists
+   if(!token) return res.status(401).send('Access Denied: No Token Provided');
+   try{
+  //Checks if the token is valid
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+  //If valid attaches user info in request object
+    req.user = verified;
+  //passes control
+    next();
+   }catch(err){
+    res.status(400).send('Invalid Token');
+   }
+}
+
 /*Basic starting route*/
 app.get('/', (req, res) => {
     res.send('Hello World!')
