@@ -149,6 +149,70 @@ app.get('/customers', async (req, res,) => {
   }
 });
 
+//It retrieves customer info by id and displays it except password.
+app.get('/customers/:id', verifyToken, async (req, res) => {
+  const customerId = req.params.id;
+  try{
+    const customerResult = await pool.query(
+      'SELECT * FROM customers WHERE id = $1', [customerId]
+    );
+    if(customerResult.rows.length === 0){
+        return res.status(404).send('Error. Customer does not exist')
+    }
+    const {password, ...userWithoutPassword} = customerResult.rows[0];
+    res.send(userWithoutPassword);
+  }catch(err){
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+//Allows user to update info 
+app.patch('/customers/:id', verifyToken, async (req, res) => {
+   const customerId = req.params.id;
+   
+   if(req.user.id !== parseInt(customerId)){
+    return res.status(403).send('Unauthorized: You can only update your own profile.');
+   }
+
+   const allowedFields = ['username', 'email', 'phone_number', 'address', 'city', 'country'];
+
+   const columnsToUpdate = Object.keys(req.body).filter(key =>
+    allowedFields.includes(key) && req.body[key] !== undefined
+    );
+
+   if(columnsToUpdate.length === 0){
+    return res.status(400).send('No valid field provided for update');
+   }
+   try{
+     const setClause = columnsToUpdate
+        .map((key, index) => `${key} = $${index + 1}`)
+        .join(', ');
+
+    const values = columnsToUpdate.map(key => req.body[key]);
+    values.push(customerId);
+    
+    const queryText = `
+       UPDATE customers
+       SET ${setClause}
+       WHERE id = $${values.length}
+       RETURNING *`;
+
+    const result = await pool.query(queryText, values);
+     
+     const {password, ...userWithoutPassword} = result.rows[0];
+     res.json({
+        message: "Profile updated successfully!",
+        user: userWithoutPassword
+     });
+   }catch(err){
+    if(err.code === '23505'){
+        return res.status(400).send('Error: that email or username is already taken.')
+    }
+    console.error(err.message);
+    res.status(500).send('Server Error');
+   }
+});
 
 
 
