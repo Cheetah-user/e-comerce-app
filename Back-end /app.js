@@ -133,22 +133,6 @@ app.get('/products', async (req, res) => {
 
 
 /*Customers routes*/
-/*Retrieves all customers */
-app.get('/customers', async (req, res,) => {
-  try{
-    const customers = await pool.query(
-      'SELECT * FROM customers'
-    );
-    if(customers.rows.length === 0){
-      return res.status(404).send('Error. Customers do not exist')
-    }
-    res.send(customers.rows);
-  }catch(err){
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
-
 //It retrieves customer info by id and displays it except password.
 app.get('/customers/:id', verifyToken, async (req, res) => {
   const customerId = req.params.id;
@@ -215,6 +199,19 @@ app.patch('/customers/:id', verifyToken, async (req, res) => {
 });
 
 
+//Carts routes
+//
+app.get("/carts", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  const carts = req.body;
+  try{
+    if(carts.customer_id === userId){
+       
+    }
+  }catch(err){
+
+  }
+});
 
 /*Orders routes*/
 app.get('/orders', (req, res) => {
