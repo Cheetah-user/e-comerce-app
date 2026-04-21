@@ -200,18 +200,55 @@ app.patch('/customers/:id', verifyToken, async (req, res) => {
 
 
 //Carts routes
-//
-app.get("/carts", verifyToken, async (req, res) => {
+//Get route that checks if person is the user, then displays cart data such as products and total price.
+app.get("/carts/:id", verifyToken, async (req, res) => {
   const userId = req.user.id;
-  const carts = req.body;
+  const cartId  = req.params.id;
   try{
-    if(carts.customer_id === userId){
-       
-    }
+//joins the products, carts, and cart_items tables 
+   const cartData = await pool.query(
+   `SELECT
+     p.id AS product_id,
+     p.name,
+     p.price,
+     p.description,
+     ci.quantity,
+      (p.price * ci.quantity) AS subtotal
+    FROM cart_items ci
+    JOIN carts c ON ci.cart_id = c.id
+    JOIN products p ON ci.product_id = p.id
+    WHERE c.id = $1 AND c.customer_id = $2`,
+    [cartId, userId]
+   );
+//default response 
+   if(cartData.rows.length === 0){
+    return res.status(200).json({
+        items: [], total: "0.00"
+    });
+   }
+//returns cart details 
+   const total = cartData.rows.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
+   res.status(200).json({
+    items: cartData.rows,
+    total: total.toFixed(2)
+  });
   }catch(err){
-
+    console.log(err);
+    res.status(500).json({error: 'Server Error'});
   }
 });
+
+//Route that lets user add and update items in cart 
+app.post("/carts/:id/items", verifyToken, async(req, res) => {
+  
+});
+
+//Route that lets user delete items from cart
+app.delete("/carts/:id", verifyToken, async(req, res) => {
+
+});
+
+//Route that lets user clear the cart
 
 /*Orders routes*/
 app.get('/orders', (req, res) => {
