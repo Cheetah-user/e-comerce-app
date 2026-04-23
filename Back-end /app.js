@@ -113,24 +113,36 @@ app.get('/products/:id', async (req, res) => {
   }
 });
 
-/*Retrieves all products of a certain category */
+/*Retrieves all products or all products of a certain category */
 app.get('/products', async (req, res) => {
-  const categoryId = req.query.category;
+  //will return products of a certain category with this route: /products?category=1
+  const categoryId = req.query.category ? parseInt(req.query.category): null;
   try{
-   const categoryResult = await pool.query(
-    'SELECT * FROM products WHERE category_id = $1', [categoryId]
+   const productQuery = await pool.query(
+    `SELECT * FROM products
+    WHERE ($1::INT IS NULL OR category_id = $1)`, [categoryId] || null
    );
-   if(categoryResult.rows.length === 0){
-     return res.status(404).send('Error. Category does not exist')
+   if(productQuery.rows.length === 0){
+     return res.status(404).send('Error. No products found')
    }
-   res.send(categoryResult.rows);
+   res.json(productQuery.rows);
   }catch(err){
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
 
-
+//Categories routes 
+//Retrieves all categories
+app.get('/categories', async (req, res)=> {
+    try{
+      const result = await pool.query('SELECT * FROM category');
+      res.json(result.rows)
+    }catch(err){
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
 /*Customers routes*/
 //It retrieves customer info by id and displays it except password.
