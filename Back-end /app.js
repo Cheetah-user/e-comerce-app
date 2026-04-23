@@ -240,7 +240,34 @@ app.get("/carts/:id", verifyToken, async (req, res) => {
 
 //Route that lets user add and update items in cart 
 app.post("/carts/:id/items", verifyToken, async(req, res) => {
-  
+  const cartId = req.params.id;
+  const userId = req.user.id;
+  const {productId, quantity} = req.body;
+  try{
+    const cartOwnerCheck = await pool.query(
+        "SELECT customer_id FROM carts WHERE id = $1",
+        [cartId]
+    );
+    //checks if cart exists, if doesn't throws error message
+    if(cartOwnerCheck.rows.length === 0){
+       return res.status(404).json({message: "Cart not found"});
+    }
+    //If not owner of the cart it returns an error
+    if(cartOwnerCheck.rows[0].customer_id != userId){
+       return res.status(403).json({message: "Unathorized: You do not own this cart."});
+    }
+    //Allows user to add items into cart, if item is already in cart it increases the quantity
+  const cartQuery = await pool.query(`
+    INSERT INTO cart_items (cart_id, product_id, quantity)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (cart_id, product_id)
+    DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+    RETURNING *`, [cartId, productId, quantity]);
+    res.status(200).json(cartQuery.rows[0]);
+  }catch(err){
+    console.log(err);
+    res.status(500).json({error: 'Internal Server Error'});
+  }
 });
 
 //Route that lets user delete items from cart
