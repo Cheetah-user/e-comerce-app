@@ -283,11 +283,82 @@ app.post("/carts/:id/items", verifyToken, async(req, res) => {
 });
 
 //Route that lets user delete items from cart
-app.delete("/carts/:id", verifyToken, async(req, res) => {
-
+app.delete("/carts/:cartId/items/:productId", verifyToken, async(req, res) => {
+  const cartId = req.params.cartId;
+  const productId = req.params.productId;
+  const userId = req.user.id;
+  try{
+    const cartOwnerCheck = await pool.query(
+        'SELECT customer_id FROM carts WHERE id = $1', [cartId]
+    );
+    //Checks if cart exists
+    if(cartOwnerCheck.rows.length === 0){
+        return res.status(404).json({message: 'Cart not found.'});
+    }
+    //Checks to see if user owns cart if not sends error
+    if(cartOwnerCheck.rows[0].customer_id !== userId){
+        return res.status(403).json({message: 'Unauthorized: You do not own this cart'});
+    }
+    //Selects quantity from the database 
+    const quantityQuery = await pool.query(
+        `SELECT quantity FROM cart_items WHERE cart_id = $1 AND product_id = $2`,
+        [cartId, productId]
+    );
+    if(quantityQuery.rows.length === 0){
+       return res.status(404).json({message: 'Item not found'});
+    }
+   //Checks to see if more than one of same item if there is reduces quantity
+    const currentQuantity = quantityQuery.rows[0].quantity;
+    if(currentQuantity > 1){
+      await pool.query(
+        'UPDATE cart_items SET quantity = quantity - 1 WHERE cart_id = $1 AND product_id = $2',
+        [cartId, productId]
+      );
+      return res.status(200).json({message: 'Quantity decreased'});
+    }else{
+        //Deletes the item
+        await pool.query(
+            'DELETE FROM cart_items WHERE cart_id = $1 AND product_id = $2',
+            [cartId, productId]
+        );
+    res.status(200).json({message: 'Success'});
+    }
+  }catch(err){
+    console.log(err);
+    res.status(500).json({error: 'Internal server error'});
+  }
 });
 
 //Route that lets user clear the cart
+app.delete('/carts/:cartId', verifyToken, async(req, res) => {
+  const cartId = req.params.cartId;
+  const userId = req.user.id;
+  try{
+    const cartOwnerCheck = await pool.query(
+        'SELECT * FROM carts WHERE id = $1 AND customer_id = $2',
+        [cartId, userId]
+    );
+    if(cartOwnerCheck.rows.length === 0){
+        res.status(404).json({message: 'Cart not found'});
+        return;
+    }
+    if(cartOwnerCheck.rows[0].customer_id !== userId){
+        return res.status(403).json({message: 'Unauthorized: You do not own this cart'});
+    }
+   await pool.query(
+    'DELETE FROM cart_items WHERE cart_id = $1',
+    [cartId]
+   );
+   await pool.query(
+    'DELETE FROM carts WHERE id = $1',
+    [cartId]
+   );
+   res.status(200).json({message: 'Cart deleted'})
+  }catch(err){
+    console.log(err);
+    res.status(500).json({error: 'Internal Server Error'});
+  }
+});
 
 /*Orders routes*/
 app.get('/orders', (req, res) => {
