@@ -360,16 +360,75 @@ app.delete('/carts/:cartId', verifyToken, async(req, res) => {
   }
 });
 
+
+/*Checkout route */
+//Checks user's cart and creates new order
+app.post('/checkout', verifyToken, async(req, res) => {
+  const userId = req.user.id;
+  const { paymentMethod } = req.body;
+  const client = await pool.connect();
+
+  try{
+    //start database transaction
+    await client.query('BEGIN');
+
+    //get all in the user's cart, including price
+    const cartItems = await client.query(
+        `SELECT ci.product_id, ci.quantity, p.price, c.id AS cart_id
+        FROM cart_items ci
+        JOIN carts c ON ci.cart_id = c.id
+        JOIN products p ON ci.product_id = p.id
+        WHERE c.customer_id = $1`, [userId]
+    );
+    //checks to see if cart is empty
+    if(cartItems.rows.length === 0){
+        return res.status(400).json({message: 'Your cart is empty'});
+    };
+    
+    //calculates total amount of order
+    const totalAmount = cartItems.rows.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const cartId = cartItems.rows[0].cart_id;
+
+    //creates a new order in the orders table
+    const orderResult = await client.query(
+       'INSERT INTO orders (customer_id, order_date, status, total_amount) VALUES ($1, NOW(), $2, $3) RETURNING id',
+       [userId, 'processing', totalAmount]
+    );
+    const orderId = orderResult.rows[0].id;
+    
+    //Add each product from cart to order_product table
+    for(const item of cartItems.rows){
+        await client.query(
+            'INSERT INTO order_product (orders_id, product_id) VALUES ($1, $2)',
+            [orderId, item.product_id]
+        );
+    }
+    
+    //Record payment in payment table
+    await client.query(
+        `INSERT INTO payments (amount, payment_method, status, payment_date, order_id, customer_id)
+        VALUES ($1, $2, 'success', NOW(), $3, $4)`,
+        [totalAmount, paymentMethod, orderId, userId]
+    );
+    //Clear user's cart after successful order and payment
+    await client.query('DELETE FROM cart_items WHERE cart_id = $1', [cartId]);
+    //commit transaction
+    await client.query('COMMIT');
+    res.status(201).json({message: 'Order successful', orderId});
+  }catch(err){
+    //rollback transaction if any errors occur
+    await client.query('ROLLBACK');
+    console.log(err);
+    res.status(500).json({error: 'Checkout failed'})
+  }finally{
+    client.release();
+  }
+});
+
 /*Orders routes*/
 app.get('/orders', (req, res) => {
 
 });
-
-/*Payments routes */
-app.get('/payments', (req, res) => {
-
-});
-
 
 /*Reviews routes*/
 app.get('/reviews', (req, res) => {
