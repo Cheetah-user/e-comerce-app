@@ -144,6 +144,7 @@ app.get('/categories', async (req, res)=> {
     }
 });
 
+
 /*Customers routes*/
 //It retrieves customer info by id and displays it except password.
 app.get('/customers/:id', verifyToken, async (req, res) => {
@@ -212,6 +213,57 @@ app.patch('/customers/:id', verifyToken, async (req, res) => {
 
 
 //Carts routes
+//Route to add and update items in user's cart, creating cart if needed 
+app.post("/carts/items", verifyToken, async(req, res) => {
+  const userId = req.user.id;
+  const {productId, quantity} = req.body;
+  const client = await pool.connect();
+
+  try{
+    //start a transaction
+    await client.query('BEGIN');
+    //checks if user already has a cart
+    let cartResult = await client.query(
+        "SELECT id FROM carts WHERE customer_id = $1",
+        [userId]
+    );
+    let cartId;
+    //if no cart exists, create one and get its ID
+    if(cartResult.rows.length === 0){
+        const newCart = await client.query(
+            "INSERT INTO carts (customer_id) VALUES ($1) RETURNING id",
+            [userId]
+        );
+       cartId = newCart.rows[0].id;
+    }else{
+        //if cart exists, use its ID
+        cartId = cartResult.rows[0].id;
+    }
+    //Allows user to add items into cart, if item is already in cart it increases the quantity
+  const cartQuery = await client.query(`
+    INSERT INTO cart_items (cart_id, product_id, quantity)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (cart_id, product_id)
+    DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+    RETURNING *`, [cartId, productId, quantity]);
+   //commit transaction
+    await client.query('COMMIT');
+    //Send a response indicating what happened
+    res.status(200).json({
+        message: cartResult.rows.length === 0 ? "Cart created and item added" : "Item added to cart",
+        item: cartQuery.rows[0]
+    });
+  }catch(err){
+    //rollback transaction on error
+    await client.query('ROLLBACK');
+    console.log(err);
+    res.status(500).json({error: 'Internal Server Error'});
+  }finally{
+    //release the database client
+    client.release();
+  }
+});
+
 //Get route that checks if person is the user, then displays cart data such as products and total price.
 app.get("/carts/:id", verifyToken, async (req, res) => {
   const userId = req.user.id;
@@ -250,37 +302,6 @@ app.get("/carts/:id", verifyToken, async (req, res) => {
   }
 });
 
-//Route that lets user add and update items in cart 
-app.post("/carts/:id/items", verifyToken, async(req, res) => {
-  const cartId = req.params.id;
-  const userId = req.user.id;
-  const {productId, quantity} = req.body;
-  try{
-    const cartOwnerCheck = await pool.query(
-        "SELECT customer_id FROM carts WHERE id = $1",
-        [cartId]
-    );
-    //checks if cart exists, if doesn't throws error message
-    if(cartOwnerCheck.rows.length === 0){
-       return res.status(404).json({message: "Cart not found"});
-    }
-    //If not owner of the cart it returns an error
-    if(cartOwnerCheck.rows[0].customer_id != userId){
-       return res.status(403).json({message: "Unathorized: You do not own this cart."});
-    }
-    //Allows user to add items into cart, if item is already in cart it increases the quantity
-  const cartQuery = await pool.query(`
-    INSERT INTO cart_items (cart_id, product_id, quantity)
-    VALUES ($1, $2, $3)
-    ON CONFLICT (cart_id, product_id)
-    DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
-    RETURNING *`, [cartId, productId, quantity]);
-    res.status(200).json(cartQuery.rows[0]);
-  }catch(err){
-    console.log(err);
-    res.status(500).json({error: 'Internal Server Error'});
-  }
-});
 
 //Route that lets user delete items from cart
 app.delete("/carts/:cartId/items/:productId", verifyToken, async(req, res) => {
@@ -349,11 +370,7 @@ app.delete('/carts/:cartId', verifyToken, async(req, res) => {
     'DELETE FROM cart_items WHERE cart_id = $1',
     [cartId]
    );
-   await pool.query(
-    'DELETE FROM carts WHERE id = $1',
-    [cartId]
-   );
-   res.status(200).json({message: 'Cart deleted'})
+   res.status(200).json({message: 'Cart items deleted'})
   }catch(err){
     console.log(err);
     res.status(500).json({error: 'Internal Server Error'});
@@ -392,14 +409,14 @@ app.post('/checkout', verifyToken, async(req, res) => {
     //creates a new order in the orders table
     const orderResult = await client.query(
        'INSERT INTO orders (customer_id, order_date, status, total_amount) VALUES ($1, NOW(), $2, $3) RETURNING id',
-       [userId, 'processing', totalAmount]
+       [userId, 'completed', totalAmount]
     );
     const orderId = orderResult.rows[0].id;
     
     //Add each product from cart to order_product table
     for(const item of cartItems.rows){
         await client.query(
-            'INSERT INTO order_product (orders_id, product_id) VALUES ($1, $2)',
+            'INSERT INTO order_product (order_id, product_id) VALUES ($1, $2)',
             [orderId, item.product_id]
         );
     }
@@ -425,8 +442,53 @@ app.post('/checkout', verifyToken, async(req, res) => {
   }
 });
 
+
+
 /*Orders routes*/
-app.get('/orders', (req, res) => {
+//Route that creates a history of user's orders
+app.get('/orders', verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  //joins the orders, order_product and products tables together and organizes by order date
+  try{
+    const result = await pool.query(
+        `SELECT 
+        o.id AS order_id,
+        o.order_date,
+        o.status,
+        o.total_amount,
+        p.name AS product_name,
+        p.price
+        FROM orders o
+        JOIN order_product op ON o.id = op.order_id
+        JOIN products p ON op.product_id = p.id
+        WHERE customer_id = $1
+        ORDER BY o.order_date DESC`,
+        [userId]
+    );
+    //if there is no previous orders will show this message
+    if(result.rows.length === 0){
+        return res.status(200).json({message: "You haven't placed an order yet."});
+    }
+   //Groups results so that each order is one object with list of products.
+    const orders = result.rows.reduce((acc, row) => {
+        const {order_id, order_date, status, total_amount, product_name, price} = row;
+        //checks to make sure that there isn't an order with the same id already...
+        if(!acc[order_id]){
+            //creates new order entry if no existing id
+            acc[order_id] = { order_date, status, total_amount, items: []};
+        }
+        //pushes current product name into items array
+        acc[order_id].items.push({product_name, price});
+        return acc;
+    }, {});
+    res.status(200).json(Object.values(orders));
+  }catch(err){
+    console.log(err);
+    res.status(500).json({error: 'Internal Server Error'});
+  }
+});
+
+app.get('/orders/orderId', verifyToken, async (req, res) => {
 
 });
 
