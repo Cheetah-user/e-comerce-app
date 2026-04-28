@@ -416,8 +416,8 @@ app.post('/checkout', verifyToken, async(req, res) => {
     //Add each product from cart to order_product table
     for(const item of cartItems.rows){
         await client.query(
-            'INSERT INTO order_product (order_id, product_id) VALUES ($1, $2)',
-            [orderId, item.product_id]
+            'INSERT INTO order_product (order_id, product_id, quantity) VALUES ($1, $2, $3)',
+            [orderId, item.product_id, item.quantity]
         );
     }
     
@@ -488,8 +488,40 @@ app.get('/orders', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/orders/orderId', verifyToken, async (req, res) => {
-
+app.get('/orders/:id', verifyToken, async (req, res) => {
+  const orderId = req.params.id;
+  const userId = req.user.id;
+  try{
+    const orderData = await pool.query(
+        `SELECT
+        o.id, o.order_date, o.status, o.total_amount,
+        p.name AS product_name, p.price, p.description, op.quantity
+        FROM orders o
+        JOIN order_product op ON o.id = op.order_id
+        JOIN products p ON op.product_id = p.id
+        WHERE o.id = $1 AND o.customer_id = $2`,
+        [orderId, userId]
+    );
+    if(orderData.rows.length === 0){
+        return res.status(404).json({error: 'Order not found'});
+    }
+    const orderDetails = {
+        order_id: orderData.rows[0].id,
+        date: orderData.rows[0].order_date,
+        status: orderData.rows[0].status,
+        total: orderData.rows[0].total_amount,
+        items: orderData.rows.map(row => ({
+            name: row.product_name,
+            price: row.price,
+            description: row.description,
+            quantity: row.quantity
+        }))
+    };
+    res.status(200).json(orderDetails);
+  }catch(err){
+    console.log(err);
+    res.status(500).json({error: 'Internal Server Error'});
+  }
 });
 
 /*Reviews routes*/
