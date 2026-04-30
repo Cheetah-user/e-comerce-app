@@ -525,8 +525,92 @@ app.get('/orders/:id', verifyToken, async (req, res) => {
 });
 
 /*Reviews routes*/
-app.get('/reviews', (req, res) => {
+//Route that gets all reviews for a specific product. It also show username, date of review, and rating.
+app.get('/reviews/products/:id', async (req, res) => {
+  const productId = req.params.id;
+  try{
+  const result = await pool.query(
+    `SELECT r.rating, r.comment, r.review_date, c.username 
+    FROM reviews r
+    JOIN customers c on r.customer_id = c.id
+    WHERE r.product_id = $1`, [productId]
+  );
+  if(result.rows.length === 0){
+    return res.status(200).json({message: 'No reviews for this product yet.'});
+  }
+  res.status(200).json(result.rows);
+  }catch(err){
+    console.log(err);
+    res.status(500).json({error: 'Internal Server Error'});
+  }
+});
 
+//Route that allows users to create a review for a product they have purchased.
+app.post('/reviews/products/:id', verifyToken, async (req, res) => {
+    const productId = req.params.id;
+    const userId = req.user.id;
+    const {rating, comment} = req.body;
+    try{
+      //Sees if user purchased item 
+      const purchaseCheck = await pool.query(
+        `SELECT * from orders
+        JOIN order_product op ON orders.id = op.order_id
+        WHERE orders.customer_id = $1 AND op.product_id = $2`,
+        [userId, productId]
+      );
+      if(purchaseCheck.rows.length === 0){
+        return res.status(403).json({message: 'You can only review products you have purchased.'});
+      };
+      //Inserts reviews into the database
+      await pool.query(
+        'INSERT INTO reviews (product_id, customer_id, rating, comment, review_date) VALUES ($1, $2, $3, $4, NOW())',
+        [productId, userId, rating, comment]
+      );
+      res.status(201).json({message: 'Review submitted successfully!'}); 
+    }catch(err){
+        console.log(err);
+        res.status(500).json({error: 'Internal Server Error'});
+    }
+});
+
+//Route that lets the user update or delete their reviews
+app.patch('/reviews/:id', verifyToken, async (req, res) => {
+    const reviewId = req.params.id;
+    const userId = req.user.id;
+    const {rating, comment} = req.body;
+    try{ 
+      const reviewsCheck = await pool.query(
+        'SELECT * FROM reviews WHERE id = $1 AND customer_id = $2',
+        [reviewId, userId]
+      );
+      //Checks to see if review exists
+      if(reviewsCheck.rows.length === 0){
+        return res.status(404).json({message: 'Review not found'});
+      }
+      //If both rating and comment are null delete.
+      if(rating === null && comment === null){
+        await pool.query(
+            'DELETE FROM reviews WHERE id = $1 AND customer_id = $2',
+            [reviewId, userId]
+        );
+        return res.status(200).json({message: 'Review deleted'});
+      }
+      //If either rating or comment is not null, just updates the one that is not null and leaves the null one the same. 
+      if(rating !== null || comment !== null){
+        await pool.query(
+            `UPDATE reviews SET 
+            rating = COALESCE($1, rating),
+            comment = COALESCE($2, comment)
+            WHERE id = $3 AND customer_id = $4`,
+            [rating, comment, reviewId, userId]
+        );
+        return res.status(200).json({message: 'Review updated'});
+      }
+
+    }catch(err){
+        console.log(err);
+        res.status(500).json({error: 'Internal Server Error'});
+    }
 });
 
 app.listen(port, () => {
