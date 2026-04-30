@@ -6,6 +6,36 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 3000;
 
+//swagger setup
+const swaggerUi = require('swagger-ui-express');
+const swaggerJSDoc = require('swagger-jsdoc');
+//swagger configuration options
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'E-comerce API',
+            version: '1.0.0',
+            description: 'API documentation for an e-commerce application for a codecademy project',
+        },
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                },
+            },
+        },
+    },
+    apis: ['./app.js'], 
+}
+//initialize swagger specification
+const swaggerSpec = swaggerJSDoc(swaggerOptions)
+//set up swagger UI route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+//Set up PostgreSQL connection pool 
 const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
@@ -44,6 +74,42 @@ app.get('/', (req, res) => {
 
 /*Register and login path */
 /*path lets the user register with name, email, and a password(which is encrypted) and sends a message if successful */
+/**
+ * @swagger
+ * /register:
+ *   post:
+ *     summary: Register a new customer
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: john_doe
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: john@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: P@ssword123
+ *     responses:
+ *       200:
+ *         description: User registered!
+ *       400:
+ *         description: Error, user with that email already exists
+ *       500:
+ *         description: Server Error
+ */
 app.post('/register', async (req, res) => {
     const {username, email, password} = req.body;
     try{
@@ -64,6 +130,48 @@ app.post('/register', async (req, res) => {
 });
 
 /*path that allows the user to login to their account using username and password */
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Log in a user and return a JWT token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: john_doe
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: P@ssword123
+ *     responses:
+ *       200:
+ *         description: Successful login
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Welcome back, john_doe!
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       401:
+ *         description: Invalid username or password
+ *       500:
+ *         description: Server Error
+ */
 app.post('/login', async (req, res) => {
     const {username, password} = req.body;
     try{
@@ -97,6 +205,40 @@ app.post('/login', async (req, res) => {
 
 /*Products routes*/
 /*Gets products by their id */
+/**
+ * @swagger
+ * /products/{id}:
+ *   get:
+ *     summary: Get a product by its ID
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique ID of the product
+ *     responses:
+ *       200:
+ *         description: Product details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 name:
+ *                   type: string
+ *                 description:
+ *                   type: string
+ *                 price:
+ *                   type: number
+ *       404:
+ *         description: Error. Product does not exist
+ *       500:
+ *         description: Server Error
+ */
 app.get('/products/:id', async (req, res) => {
   const productId = req.params.id;
   try{
@@ -114,6 +256,42 @@ app.get('/products/:id', async (req, res) => {
 });
 
 /*Retrieves all products or all products of a certain category */
+/**
+ * @swagger
+ * /products:
+ *   get:
+ *     summary: Get all products or filter by category
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The ID of the category to filter products by
+ *     responses:
+ *       200:
+ *         description: A list of products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   category_id:
+ *                     type: integer
+ *                   price:
+ *                     type: number
+ *       404:
+ *         description: Error. No products found
+ *       500:
+ *         description: Server Error
+ */
 app.get('/products', async (req, res) => {
   //will return products of a certain category with this route: /products?category=1
   const categoryId = req.query.category ? parseInt(req.query.category): null;
@@ -134,6 +312,31 @@ app.get('/products', async (req, res) => {
 
 //Categories routes 
 //Retrieves all categories
+/**
+ * @swagger
+ * /categories:
+ *   get:
+ *     summary: Get all product categories
+ *     tags: [Categories]
+ *     responses:
+ *       200:
+ *         description: A list of categories
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   name:
+ *                     type: string
+ *                     example: Electronics
+ *       500:
+ *         description: Server Error
+ */
 app.get('/categories', async (req, res)=> {
     try{
       const result = await pool.query('SELECT * FROM category');
@@ -147,6 +350,42 @@ app.get('/categories', async (req, res)=> {
 
 /*Customers routes*/
 //It retrieves customer info by id and displays it except password.
+/**
+ * @swagger
+ * /customers/{id}:
+ *   get:
+ *     summary: Get customer profile by ID
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique ID of the customer
+ *     responses:
+ *       200:
+ *         description: Customer profile retrieved successfully (excluding password)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 username:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized - Token missing or invalid
+ *       404:
+ *         description: Error. Customer does not exist
+ *       500:
+ *         description: Server Error
+ */
 app.get('/customers/:id', verifyToken, async (req, res) => {
   const customerId = req.params.id;
   try{
@@ -165,6 +404,61 @@ app.get('/customers/:id', verifyToken, async (req, res) => {
 });
 
 //Allows user to update info 
+/**
+ * @swagger
+ * /customers/{id}:
+ *   patch:
+ *     summary: Update specific fields of a customer profile
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique ID of the customer to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               phone_number:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               country:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully!
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *       400:
+ *         description: No valid fields provided or data conflict (duplicate email/username)
+ *       403:
+ *         description: Unauthorized - You can only update your own profile
+ *       401:
+ *         description: Unauthorized - Token missing or invalid
+ *       500:
+ *         description: Server Error
+ */
 app.patch('/customers/:id', verifyToken, async (req, res) => {
    const customerId = req.params.id;
    
@@ -214,6 +508,48 @@ app.patch('/customers/:id', verifyToken, async (req, res) => {
 
 //Carts routes
 //Route to add and update items in user's cart, creating cart if needed 
+/**
+ * @swagger
+ * /carts/items:
+ *   post:
+ *     summary: Add an item to the cart (Creates a cart automatically if none exists)
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *               - quantity
+ *             properties:
+ *               productId:
+ *                 type: integer
+ *                 example: 101
+ *               quantity:
+ *                 type: integer
+ *                 example: 2
+ *     responses:
+ *       200:
+ *         description: Item added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Cart created and item added
+ *                 item:
+ *                   type: object
+ *       401:
+ *         description: Unauthorized - Token missing or invalid
+ *       500:
+ *         description: Internal Server Error
+ */
 app.post("/carts/items", verifyToken, async(req, res) => {
   const userId = req.user.id;
   const {productId, quantity} = req.body;
@@ -265,6 +601,52 @@ app.post("/carts/items", verifyToken, async(req, res) => {
 });
 
 //Get route that checks if person is the user, then displays cart data such as products and total price.
+/**
+ * @swagger
+ * /carts/{id}:
+ *   get:
+ *     summary: Get all items in a specific cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique ID of the cart
+ *     responses:
+ *       200:
+ *         description: Cart details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       product_id:
+ *                         type: integer
+ *                       name:
+ *                         type: string
+ *                       price:
+ *                         type: number
+ *                       quantity:
+ *                         type: integer
+ *                       subtotal:
+ *                         type: number
+ *                 total:
+ *                   type: string
+ *                   example: "45.99"
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server Error
+ */
 app.get("/carts/:id", verifyToken, async (req, res) => {
   const userId = req.user.id;
   const cartId  = req.params.id;
@@ -304,6 +686,45 @@ app.get("/carts/:id", verifyToken, async (req, res) => {
 
 
 //Route that lets user delete items from cart
+/**
+ * @swagger
+ * /carts/{cartId}/items/{productId}:
+ *   delete:
+ *     summary: Decrease item quantity or remove item from cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: cartId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the cart
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the product to remove or decrement
+ *     responses:
+ *       200:
+ *         description: Operation successful (Returns "Quantity decreased" or "Success")
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Quantity decreased
+ *       403:
+ *         description: Unauthorized - You do not own this cart
+ *       404:
+ *         description: Cart or Item not found
+ *       500:
+ *         description: Internal server error
+ */
 app.delete("/carts/:cartId/items/:productId", verifyToken, async(req, res) => {
   const cartId = req.params.cartId;
   const productId = req.params.productId;
@@ -350,7 +771,41 @@ app.delete("/carts/:cartId/items/:productId", verifyToken, async(req, res) => {
   }
 });
 
+
 //Route that lets user clear the cart
+/**
+ * @swagger
+ * /carts/{cartId}:
+ *   delete:
+ *     summary: Clear all items from a cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: cartId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the cart to empty
+ *     responses:
+ *       200:
+ *         description: Cart items deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Cart items deleted
+ *       403:
+ *         description: Unauthorized - You do not own this cart
+ *       404:
+ *         description: Cart not found
+ *       500:
+ *         description: Internal Server Error
+ */
 app.delete('/carts/:cartId', verifyToken, async(req, res) => {
   const cartId = req.params.cartId;
   const userId = req.user.id;
@@ -380,6 +835,49 @@ app.delete('/carts/:cartId', verifyToken, async(req, res) => {
 
 /*Checkout route */
 //Checks user's cart and creates new order
+/**
+ * @swagger
+ * /checkout:
+ *   post:
+ *     summary: Checkout and place an order
+ *     description: Converts cart items into an order, records payment, and clears the cart using a database transaction.
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - paymentMethod
+ *             properties:
+ *               paymentMethod:
+ *                 type: string
+ *                 example: "Credit Card"
+ *                 description: The method used for payment (e.g., Credit Card, PayPal).
+ *     responses:
+ *       201:
+ *         description: Order successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Order successful"
+ *                 orderId:
+ *                   type: integer
+ *                   example: 55
+ *       400:
+ *         description: Bad Request - Cart is empty
+ *       401:
+ *         description: Unauthorized - Token missing or invalid
+ *       500:
+ *         description: Checkout failed - Internal Server Error
+ */
 app.post('/checkout', verifyToken, async(req, res) => {
   const userId = req.user.id;
   const { paymentMethod } = req.body;
@@ -446,6 +944,43 @@ app.post('/checkout', verifyToken, async(req, res) => {
 
 /*Orders routes*/
 //Route that creates a history of user's orders
+/**
+ * @swagger
+ * /orders:
+ *   get:
+ *     summary: Get all previous orders for the logged-in user
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of orders with their associated products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   order_date:
+ *                     type: string
+ *                     format: date-time
+ *                   status:
+ *                     type: string
+ *                   total_amount:
+ *                     type: number
+ *                   items:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         product_name:
+ *                           type: string
+ *                         price:
+ *                           type: number
+ *       500:
+ *         description: Internal Server Error
+ */
 app.get('/orders', verifyToken, async (req, res) => {
   const userId = req.user.id;
   //joins the orders, order_product and products tables together and organizes by order date
@@ -488,6 +1023,60 @@ app.get('/orders', verifyToken, async (req, res) => {
   }
 });
 
+
+//Route that lets user see details of a specific order
+/**
+ * @swagger
+ * /orders/{id}:
+ *   get:
+ *     summary: Get detailed information for a specific order
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique ID of the order
+ *     responses:
+ *       200:
+ *         description: Order details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 order_id:
+ *                   type: integer
+ *                 date:
+ *                   type: string
+ *                   format: date-time
+ *                 status:
+ *                   type: string
+ *                 total:
+ *                   type: number
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                       price:
+ *                         type: number
+ *                       description:
+ *                         type: string
+ *                       quantity:
+ *                         type: integer
+ *       404:
+ *         description: Order not found
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
+ */
 app.get('/orders/:id', verifyToken, async (req, res) => {
   const orderId = req.params.id;
   const userId = req.user.id;
@@ -524,8 +1113,53 @@ app.get('/orders/:id', verifyToken, async (req, res) => {
   }
 });
 
+
 /*Reviews routes*/
 //Route that gets all reviews for a specific product. It also show username, date of review, and rating.
+/**
+ * @swagger
+ * /reviews/products/{id}:
+ *   get:
+ *     summary: Get all reviews for a specific product
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique ID of the product
+ *     responses:
+ *       200:
+ *         description: A list of product reviews
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       rating:
+ *                         type: integer
+ *                         example: 5
+ *                       comment:
+ *                         type: string
+ *                         example: "Excellent product, highly recommend!"
+ *                       review_date:
+ *                         type: string
+ *                         format: date-time
+ *                       username:
+ *                         type: string
+ *                         example: "happy_shopper"
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: "No reviews for this product yet."
+ *       500:
+ *         description: Internal Server Error
+ */
 app.get('/reviews/products/:id', async (req, res) => {
   const productId = req.params.id;
   try{
@@ -545,7 +1179,52 @@ app.get('/reviews/products/:id', async (req, res) => {
   }
 });
 
+
 //Route that allows users to create a review for a product they have purchased.
+/**
+ * @swagger
+ * /reviews/products/{id}:
+ *   post:
+ *     summary: Submit a review for a product
+ *     description: Allows a user to post a rating and comment only if they have previously purchased the product.
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the product to review
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - rating
+ *               - comment
+ *             properties:
+ *               rating:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 5
+ *               comment:
+ *                 type: string
+ *                 example: "Great quality, fits perfectly!"
+ *     responses:
+ *       201:
+ *         description: Review submitted successfully!
+ *       403:
+ *         description: Forbidden - You can only review products you have purchased
+ *       401:
+ *         description: Unauthorized - Token missing or invalid
+ *       500:
+ *         description: Internal Server Error
+ */
 app.post('/reviews/products/:id', verifyToken, async (req, res) => {
     const productId = req.params.id;
     const userId = req.user.id;
@@ -574,6 +1253,55 @@ app.post('/reviews/products/:id', verifyToken, async (req, res) => {
 });
 
 //Route that lets the user update or delete their reviews
+/**
+ * @swagger
+ * /reviews/{id}:
+ *   patch:
+ *     summary: Update or Delete a review
+ *     description: Updates the rating/comment using COALESCE. If both are null, the review is deleted.
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique ID of the review
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating:
+ *                 type: integer
+ *                 nullable: true
+ *                 example: 4
+ *               comment:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "Actually, it was pretty good!"
+ *     responses:
+ *       200:
+ *         description: Successfully updated or deleted the review
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Review updated
+ *       404:
+ *         description: Review not found or you are not the owner
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
+ */
 app.patch('/reviews/:id', verifyToken, async (req, res) => {
     const reviewId = req.params.id;
     const userId = req.user.id;
