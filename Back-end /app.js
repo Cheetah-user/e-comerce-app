@@ -6,6 +6,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 3000;
+//importing google auth library
+const {OAuth2Client} = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 //swagger setup
 const swaggerUi = require('swagger-ui-express');
@@ -204,6 +207,65 @@ app.post('/login', async (req, res) => {
     }
 });
 
+//login with google route 
+app.post('/auth/google', async (req, res) => {
+  try {
+    const { googleToken } = req.body;
+
+    if (!googleToken) {
+      return res.status(400).json({ message: "Google token is missing" });
+    }
+
+    // 1. Verify the token directly against Google's servers
+    const ticket = await googleClient.verifyIdToken({
+      idToken: googleToken,
+      audience: process.env.GOOGLE_CLIENT_ID, 
+    });
+
+    // 2. Extract user details safely from the verified payload
+    const payload = ticket.getPayload();
+    const { email, name } = payload;
+
+    // 3. Check if this customer already exists in your Postgres database
+    let userResult = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
+    let customer = userResult.rows[0];
+
+    if (!customer) {
+      // Generate a completely unbreakable password
+      const randomPassword = Math.random().toString(36) + 'GOOGLE_AUTH_SECURE_BYPASS_' + Date.now();
+
+      const salt = await bcrypt.genSalt(10);
+      const secureHashedPassword = await bcrypt.hash(randomPassword, salt);
+
+      // 4. Automatic Sign-up: If they don't exist, create a baseline profile instantly
+      // We pass an empty string or dummy password since they authenticate via Google!
+      const newCustomerResult = await pool.query(
+        `INSERT INTO customers (username, email, password, phone_number, address, city, country) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         RETURNING id, username, email`,
+        [name, email, secureHashedPassword, 'N/A', 'N/A', 'N/A', 'N/A']
+      );
+      customer = newCustomerResult.rows[0];
+    }
+
+    // 5. Generate your native app JWT token
+    const appToken = jwt.sign(
+      { id: customer.id, email: customer.email }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '24h' }
+    );
+
+    // 6. Return your native token to the client
+    res.status(200).json({
+      token: appToken,
+      user: { id: customer.id, username: customer.username },
+      message: "Successfully signed in via Google!"
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: "Google authentication failed", error: err.message });
+  }
+});
 
 
 /*Products routes*/
