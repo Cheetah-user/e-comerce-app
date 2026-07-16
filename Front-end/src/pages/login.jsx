@@ -1,10 +1,19 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
+import { useNavigate } from "react-router";
 import { GoogleLogin } from '@react-oauth/google';
 
 function Login() {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({username: '', password: ''});
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        const activeToken = localStorage.getItem('token');
+        if(activeToken){
+            navigate('/'); 
+        }
+    }, [navigate])
 
     // Handle input changes
     const handleChange = (e) => {
@@ -62,6 +71,7 @@ function Login() {
       
          const { token, user } = data;
          localStorage.setItem('token', token);
+         window.dispatchEvent(new Event('authChange'));
          console.log('Successfully logged in via Google as:', user.username);
          navigate('/');
 
