@@ -32,6 +32,7 @@ function Navbar() {
             <Link to='/'>🛍️ Store</Link>
         </div>
         <ul className="navbar-links">
+            <li><Link to='/'>Home</Link></li>
             <li><Link to='/products'>Products</Link></li>
             <li><Link to='/cart'>Cart</Link></li>
             {isLoggedIn ?(
