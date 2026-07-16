@@ -122,11 +122,24 @@ app.post('/register', async (req, res) => {
        const saltRounds = 10;
        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-       await pool.query(
-        'INSERT INTO customers (username, email, password) VALUES ($1, $2, $3)',
+       const result = await pool.query(
+        'INSERT INTO customers (username, email, password) VALUES ($1, $2, $3) RETURNING id, username',
         [username, email, hashedPassword]
        );
-      res.send('User registered!');
+      const newUser = result.rows[0];
+      //generates a jwt token when a user registers
+      const token = jwt.sign(
+        {id: newUser.id, username: newUser.username},
+        process.env.JWT_SECRET,
+        {expiresIn: '4h'}
+      );
+
+      res.json({
+        message: 'User Registered successfully',
+        token: token,
+        user: {id: newUser.id, username: newUser.username}
+      });
+      
     }catch(err){
        if(err.code === '23505'){
         return res.status(400).send('Error, user with that email already exists')

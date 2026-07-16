@@ -1,9 +1,11 @@
 import React, {useState} from "react";
+import { useNavigate } from "react-router";
 
 function Register() {
     const [formData, setFormData] = useState({username: '', email: '', password: ''});
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const navigate = useNavigate();
     // Handle input changes
     const handleChange = (e) => {
         setFormData({...formData, [e.target.name]: e.target.value});
@@ -30,8 +32,10 @@ function Register() {
                 return;
             }
 
-            setMessage(data); //Displays the success message: "User registered sucessfully"
-            setFormData({username: '', email: '', password: ''}); // Resets the form fields
+            localStorage.setItem('token', data.token);
+            window.dispatchEvent(new Event('authChange'));
+            navigate('/');
+
         }catch(err){
             setError(true);
             setMessage('Failed to connect to the server');
