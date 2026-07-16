@@ -41,8 +41,9 @@ function Login() {
                 setMessage(data.message || "Invalid username or password"); //Displays the error message: "Invalid username" or "Invalid password"
                 return;
             }
-            setMessage(data.message); //Displays the success message: "Login successful"
-            setFormData({username: '', password: ''}); //Resets the form fields
+            localStorage.setItem('token', data.token);
+            window.dispatchEvent(new Event('authChange'));
+            navigate('/');
         }catch(err){
             setError(true);
             setMessage('Failed to connect to the server');
