@@ -78,7 +78,7 @@ function Products(){
                     filteredProducts.map((product) => (
                         <div key={product.id} className="product-card">
                             <img
-                                src={`https://placehold.co{encodeURIComponent(product.name)}`}
+                                src={product.img_url}
                                 alt={product.name}
                                 className="product-image"
                             />
