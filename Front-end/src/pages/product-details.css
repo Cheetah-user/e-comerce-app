@@ -1,0 +1,113 @@
+.details-container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: #0071e3;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 24px;
+}
+
+.back-btn:hover {
+    text-decoration: underline;
+}
+
+/* Layout Split Box */
+.details-wrapper {
+    display: flex;
+    gap: 50px;
+    background-color: #ffffff;
+    border: 1px solid #e5e5ea;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.details-image-section {
+    flex: 1.2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.details-main-image {
+    width: 100%;
+    max-height: 450px;
+    object-fit: contain;
+    background-color: #f5f5f7;
+    border-radius: 12px;
+}
+
+.details-info-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.details-product-name {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin: 0 0 12px 0;
+}
+
+.details-product-price {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin: 0 0 24px 0;
+}
+
+.details-divider {
+    border: 0;
+    border-top: 1px solid #e5e5ea;
+    margin-bottom: 24px;
+}
+
+.details-section-label {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #86868b;
+    margin: 0 0 8px 0;
+}
+
+.details-product-desc {
+    font-size: 16px;
+    color: #424245;
+    line-height: 1.6;
+    margin-bottom: 40px;
+}
+
+.details-add-btn {
+    width: 100%;
+    background-color: #0071e3;
+    color: #ffffff;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    margin-top: auto;
+}
+
+.details-add-btn:hover {
+    background-color: #0077ed;
+}
+
+/* Response Loader UI Elements */
+.details-loader, .details-error-msg {
+    text-align: center;
+    padding: 100px;
+    font-size: 18px;
+    color: #86868b;
+}

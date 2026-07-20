@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import React from "react";
 import './products.css';
+import { Link } from "react-router-dom";
 
 function Products(){
     const [products, setProducts] = useState([]);
@@ -77,13 +78,17 @@ function Products(){
                     /* 3. FIXED: Parameter name changed to single 'product' and swapped to normal parenthesis */
                     filteredProducts.map((product) => (
                         <div key={product.id} className="product-card">
-                            <img
-                                src={product.img_url}
-                                alt={product.name}
-                                className="product-image"
-                            />
+                            <Link to={`/products/${product.id}`} className="product-details-link">
+                                <img
+                                    src={product.img_url}
+                                    alt={product.name}
+                                    className="product-image"
+                                />
+                            </Link>
                             <div className="product-info">
-                                <h3 className="product-name">{product.name}</h3>
+                                <Link to={`/products/${product.id}`} className="product-title-link">
+                                    <h3 className="product-name">{product.name}</h3>
+                                </Link>
                                 <p className="product-desc">{product.description}</p>
                                 <div className="product-footer">
                                     <span className="product-price">${parseFloat(product.price).toFixed(2)}</span>
