@@ -139,7 +139,7 @@ app.post('/register', async (req, res) => {
         token: token,
         user: {id: newUser.id, username: newUser.username}
       });
-      
+
     }catch(err){
        if(err.code === '23505'){
         return res.status(400).send('Error, user with that email already exists')
@@ -585,6 +585,33 @@ app.patch('/customers/:id', verifyToken, async (req, res) => {
 
 
 //Carts routes
+
+app.get("/carts/mine", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    // Look up if a cart exists for this customer
+    let cartResult = await pool.query(
+        "SELECT id FROM carts WHERE customer_id = $1", [userId]
+    );
+
+    let cartId;
+    if (cartResult.rows.length === 0) {
+        // Create an empty cart layout if they don't have one yet
+        const newCart = await pool.query(
+            "INSERT INTO carts (customer_id) VALUES ($1) RETURNING id", [userId]
+        );
+        cartId = newCart.rows[0].id;
+    } else {
+        cartId = cartResult.rows[0].id;
+    }
+
+    // Hand back the clear cart ID without touching the item table
+    res.status(200).json({ cartId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
 //Route to add and update items in user's cart, creating cart if needed 
 /**
  * @swagger
@@ -741,7 +768,7 @@ app.get("/carts/:id", verifyToken, async (req, res) => {
     FROM cart_items ci
     JOIN carts c ON ci.cart_id = c.id
     JOIN products p ON ci.product_id = p.id
-    WHERE c.id = $1 AND c.customer_id = $2`,
+    WHERE c.id = $1 AND c.customer_id = $2 AND ci.quantity > 0`,
     [cartId, userId]
    );
 //default response 

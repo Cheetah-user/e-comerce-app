@@ -8,6 +8,8 @@ function ProductDetails(){
     const navigate = useNavigate();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isAdding, adding] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -32,9 +34,43 @@ function ProductDetails(){
         fetchProductDetails();
     }, [id]);
 
-    const handleAddToCart = () => {
-        console.log(`Adding item ID ${product.id} to cart`);
+    const handleAddToCart =  async () => {
+        const token = localStorage.getItem('token');
+        if(!token){
+            navigate('/login');
+            return;
+        }
+
+        adding(true);
+        setSuccessMessage('');
+
+        try{
+            const response = await fetch('http://localhost:3000/carts/items', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    productId: product.id,
+                    quantity: 1
+                })
+            });
+
+            if(!response.ok){
+                throw new Error('Could not add item to cart');
+            }
+            const data = await response.json();
+            setSuccessMessage('✓ Added to Shopping Bag!');
+            setTimeout(() => setSuccessMessage(''), 3000);
+        }catch(err){
+          alert(err.message || 'Something went wrong');
+        }finally{
+            adding(false);
+        }
     };
+
+
     if(loading) return <div className="details-loader">Loading item specifics...</div>;
     if(error) return <div className="details-error-msg">{error}<button onClick={() => navigate('/products')}>Back to Store</button></div>;
     if(!product) return null;
@@ -59,9 +95,16 @@ function ProductDetails(){
                     <h3 className="details-section-label">Description</h3>
                     <p className="details-product-desc">{product.description}</p>
 
-                    <button className="details-add-btn" onClick={handleAddToCart}>
-                      Add to Cart
+                    <button className="details-add-btn" onClick={handleAddToCart} disabled={isAdding}>
+                         {isAdding ? 'Adding...' : 'Add to Shopping Bag'}
                     </button>
+
+
+                    {successMessage && (
+                        <p style={{ color: 'green', fontWeight: 'bold', marginTop: '10px', textAlign: 'center' }}>
+                        {successMessage}
+                        </p>
+                    )}
 
                 </div>
             </div>

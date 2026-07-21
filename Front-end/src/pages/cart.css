@@ -1,0 +1,142 @@
+.cart-container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.cart-container h2 {
+    font-size: 28px;
+    color: #1d1d1f;
+    margin-bottom: 30px;
+}
+
+/* Flexbox Workspace layout setup */
+.cart-wrapper {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+.cart-items-section {
+    flex: 1.8;
+}
+
+.clear-cart-btn {
+    background: none;
+    border: none;
+    color: #ff3b30;
+    cursor: pointer;
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+
+.clear-cart-btn:hover {
+    text-decoration: underline;
+}
+
+/* Individual Item Layout Cards */
+.cart-item-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e5e5ea;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.cart-item-desc {
+    font-size: 13px;
+    color: #86868b;
+    margin: 4px 0 8px 0;
+}
+
+.cart-item-price {
+    font-size: 14px;
+    color: #1d1d1f;
+    font-weight: 500;
+}
+
+.cart-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+/* Minus Counter Button UI */
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    border: 1px solid #d2d2d7;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.quantity-controls button {
+    background: #f5f5f7;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.quantity-controls span {
+    padding: 0 12px;
+    font-weight: 600;
+}
+
+.item-subtotal {
+    font-weight: 600;
+    font-size: 16px;
+    min-width: 70px;
+    text-align: right;
+}
+
+/* Order Totals Summary Card */
+.cart-summary-section {
+    flex: 1;
+    background-color: #f5f5f7;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: inset 0 0 1px rgba(0,0,0,0.1);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 0;
+    color: #424245;
+}
+
+.total-row {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin-top: 16px;
+}
+
+.checkout-btn, .shop-btn {
+    width: 100%;
+    background-color: #0071e3;
+    color: #ffffff;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.checkout-btn:hover, .shop-btn:hover {
+    background-color: #0077ed;
+}
+
+/* State Handlers UI */
+.empty-cart-view, .cart-loader, .cart-error {
+    text-align: center;
+    padding: 60px;
+    color: #86868b;
+}
