@@ -6,17 +6,45 @@ import { useState, useEffect } from "react";
 function Navbar() {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    
-    const checkLoginState = () => {
-        const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token); 
+    const [cartCount, setCartCount] = useState(0);
+
+    const checkStatusAndCart = async () => {
+      const token = localStorage.getItem('token');
+      setIsLoggedIn(!!token);
+
+      if(!token) {
+        setCartCount(0);
+        return;
+      }
+
+      try{
+        //Gets the current user's cart
+        const initRes = await fetch('http://localhost:3000/carts/mine', {
+          headers: {'Authorization': `Bearer ${token}`}
+        });
+        if(!initRes.ok) return;
+        const initData = await initRes.json();
+        
+        //Fetch cart content using cart id
+        const cartRes = await fetch(`http://localhost:3000/carts/${initData.cartId}`, {
+          headers: {'Authorization': `Bearer ${token}`}
+        });
+        if(!cartRes.ok) return;
+        const cartData = await cartRes.json();
+
+        //Sum up amount of individual items 
+        const totalItems = (cartData.items || []).reduce((sum, item) => sum + item.quantity, 0);
+        setCartCount(totalItems);
+      }catch(err){
+        console.error('Error updating navbar cart badge:', err);
+      }
     };
 
     useEffect(() => {
-        checkLoginState();
-        window.addEventListener('authChange', checkLoginState);
+        checkStatusAndCart();
+        window.addEventListener('authChange', checkStatusAndCart);
         return () => {
-          window.removeEventListener('authChange', checkLoginState);
+          window.removeEventListener('authChange', checkStatusAndCart);
         };
     }, []);
 
@@ -34,7 +62,10 @@ function Navbar() {
         <ul className="navbar-links">
             <li><Link to='/'>Home</Link></li>
             <li><Link to='/products'>Products</Link></li>
-            <li><Link to='/cart'>Cart</Link></li>
+            <li><Link to='/cart' className="navbar-cart-link">
+              🛒 Cart {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            </Link></li>
+            
             {isLoggedIn ?(
                 <>
                   <li className="navbar-item-user">Welcome!</li>

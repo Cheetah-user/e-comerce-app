@@ -4,6 +4,7 @@ import './products.css';
 import { Link } from "react-router-dom";
 
 function Products(){
+    const [addingId, setAddingId] = useState(null);
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     // 1. Changed 'All' to 'ALL' to match your bottom filter casing perfectly
@@ -38,8 +39,35 @@ function Products(){
         fetchStoreData();
     }, []);
 
-    const handleAddToCart = (productId) => {
-        console.log(`Adding item ID ${productId} to cart!`);
+    const handleAddToCart = async (productId) => {
+        const token = localStorage.getItem('token');
+        if(!token){
+            navigate('/login');
+            return;
+        }
+        setAddingId(productId);
+        try{
+            const response = await fetch('http://localhost:3000/carts/items', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                productId: productId,
+                quantity: 1
+              })
+            });
+
+            if(!response.ok){
+                throw new Error('Could not add item to cart');
+            }
+            window.dispatchEvent(new Event('authChange'));
+        } catch(err){
+          alert(err.message || 'Something went wrong');
+        } finally {
+            setAddingId(null);
+        }
     };
 
     const filteredProducts = selectedCategory === 'ALL' ? products 
@@ -92,8 +120,8 @@ function Products(){
                                 <p className="product-desc">{product.description}</p>
                                 <div className="product-footer">
                                     <span className="product-price">${parseFloat(product.price).toFixed(2)}</span>
-                                    <button className="add-to-cart-btn" onClick={() => handleAddToCart(product.id)}>
-                                        Add To Cart
+                                    <button className="add-to-cart-btn" onClick={() => handleAddToCart(product.id)} disabled={addingId === product.id}>
+                                        {addingId === product.id ? 'Adding...' : 'Add to Cart'}
                                     </button>
                                 </div>
                             </div>

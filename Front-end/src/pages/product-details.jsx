@@ -62,6 +62,7 @@ function ProductDetails(){
             }
             const data = await response.json();
             setSuccessMessage('✓ Added to Shopping Bag!');
+            window.dispatchEvent(new Event('authChange'));
             setTimeout(() => setSuccessMessage(''), 3000);
         }catch(err){
           alert(err.message || 'Something went wrong');
