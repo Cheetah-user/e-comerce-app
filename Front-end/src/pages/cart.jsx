@@ -68,10 +68,39 @@ function Cart() {
         if(response.ok){
             await fetchCartDetails(cartId);
         }
+        window.dispatchEvent(new Event('authChange'));
     }catch(err){
         console.error('Error modifying item quantity');
     }
    };
+
+   const handleIncrement = async (productId, currentQuantity) => {
+     const token = localStorage.getItem('token');
+     try{
+        const response = await fetch('http://localhost:3000/carts/items', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                productId: productId,
+                quantity: 1
+            })
+        });
+
+        if(!response.ok){
+            throw new Error('Could not update successfully');
+        }
+        
+        if(cartId){
+            await fetchCartDetails(cartId);
+        }
+        window.dispatchEvent(new Event('authChange'));
+     }catch(err){
+        alert(err.message || 'Something went wrong');
+     }
+   }
 
    const handleClearCart = async () => {
      try{
@@ -84,6 +113,7 @@ function Cart() {
         setCartItems([]);
         setCartTotal("0.00");
        }
+       window.dispatchEvent(new Event('authChange'));
      }catch(err){
        console.error('Error clearing cart:', err);
      }
@@ -120,6 +150,7 @@ function Cart() {
                                 <div className="quantity-controls">
                                     <button onClick={() => handleDecreaseQuantity(item.product_id)}>-</button>
                                     <span>{item.quantity}</span>
+                                    <button className="quantity-btn-plus" onClick={() => handleIncrement(item.product_id, item.quantity)}>+</button>
                                 </div>
                                 <span className="item-subtotal">${parseFloat(item.subtotal).toFixed(2)}</span>
                             </div>

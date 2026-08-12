@@ -140,3 +140,31 @@
     padding: 60px;
     color: #86868b;
 }
+
+.cart-quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.quantity-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.quantity-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.quantity-display {
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+}
