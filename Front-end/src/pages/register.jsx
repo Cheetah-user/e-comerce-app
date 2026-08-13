@@ -24,13 +24,15 @@ function Register() {
                body: JSON.stringify(formData),
             });
 
-            const data = await response.text(); 
             //checks if the response is ok
             if (!response.ok){
+                const errorText = await response.text();
                 setError(true);
-                setMessage(data); // Displays the error message: "Username already exists" or "Email already exists"
+                setMessage(errorText); // Displays the error message: "Username already exists" or "Email already exists"
                 return;
             }
+
+            const data = await response.json(); 
 
             localStorage.setItem('token', data.token);
             window.dispatchEvent(new Event('authChange'));

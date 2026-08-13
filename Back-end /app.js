@@ -127,6 +127,11 @@ app.post('/register', async (req, res) => {
         [username, email, hashedPassword]
        );
       const newUser = result.rows[0];
+
+      await pool.query(
+        'INSERT INTO carts (customer_id) VALUES ($1)',
+        [newUser.id]
+      );
       //generates a jwt token when a user registers
       const token = jwt.sign(
         {id: newUser.id, username: newUser.username},
