@@ -51,6 +51,8 @@ function Navbar() {
     const handleLogout = () => {
         localStorage.removeItem('token'); //Clears the JWT token
         setIsLoggedIn(false);
+        setCartCount(0);
+        window.dispatchEvent(new Event('authChange'));
         navigate('/login'); //Redirects to login page
     };
 
