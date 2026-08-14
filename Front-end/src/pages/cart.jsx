@@ -173,7 +173,7 @@ function Cart() {
                         <span>Total</span>
                         <span>${cartTotal}</span>
                     </div>
-                    <button className="checkout-btn" onClick={() => alert('Proceeding to Checkout flow')}>
+                    <button className="checkout-btn" onClick={() => navigate('/checkout')}>
                         Proceed to Checkout
                     </button>
                 </div>

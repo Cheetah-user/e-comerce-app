@@ -1,0 +1,168 @@
+.checkout-page-container {
+    max-width: 1100px;
+    margin: 50px auto;
+    padding: 0 24px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.checkout-page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 12px;
+}
+
+.checkout-split-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 50px;
+    align-items: start;
+}
+
+.checkout-billing-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-section-header {
+    font-size: 18px;
+    font-weight: 600;
+    color: #444;
+    margin-top: 14px;
+    margin-bottom: 4px;
+}
+
+.checkout-billing-form input, 
+.payment-select-dropdown {
+    padding: 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    background-color: #fff;
+}
+
+.checkout-billing-form input:focus,
+.payment-select-dropdown:focus {
+    border-color: #007aff;
+}
+
+.form-double-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.finalize-checkout-btn {
+    background-color: #34c759; /* Bright Wallet Green */
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.2s;
+}
+
+.finalize-checkout-btn:hover {
+    background-color: #28a745;
+}
+
+.finalize-checkout-btn:disabled {
+    background-color: #a7e1b5;
+    cursor: not-allowed;
+}
+
+/* RIGHT SIDE CARDS */
+.checkout-summary-sidebar {
+    background-color: #f9f9f9;
+    border: 1px solid #ebebeb;
+    border-radius: 12px;
+    padding: 24px;
+    position: sticky;
+    top: 30px;
+}
+
+.sidebar-summary-title {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: #222;
+}
+
+.sidebar-items-scrollbox {
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    padding-right: 6px;
+}
+
+.sidebar-product-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    font-size: 14px;
+}
+
+.sidebar-item-details {
+    display: flex;
+    flex-direction: column;
+    max-width: 75%;
+}
+
+.sidebar-item-name {
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-item-qty {
+    font-size: 12px;
+    color: #777;
+    margin-top: 2px;
+}
+
+.sidebar-item-price {
+    font-weight: 600;
+    color: #444;
+}
+
+.summary-card-divider {
+    border: 0;
+    border-top: 1px solid #e0e0e0;
+    margin: 16px 0;
+}
+
+.summary-calc-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.green-shipping-text {
+    color: #34c759;
+    font-weight: 600;
+}
+
+.summary-calc-row.ultimate-total {
+    font-size: 20px;
+    font-weight: bold;
+    color: #000;
+}
+
+.checkout-loading-screen {
+    text-align: center;
+    font-size: 18px;
+    margin-top: 120px;
+    color: #555;
+}

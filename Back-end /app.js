@@ -1007,11 +1007,11 @@ app.post('/checkout', verifyToken, async(req, res) => {
     );
     //checks to see if cart is empty
     if(cartItems.rows.length === 0){
-        return res.status(400).json({message: 'Your cart is empty'});
+        throw new Error('Your cart is empty');
     };
     
     //calculates total amount of order
-    const totalAmount = cartItems.rows.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const totalAmount = cartItems.rows.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
     const cartId = cartItems.rows[0].cart_id;
 
     //creates a new order in the orders table
@@ -1044,6 +1044,9 @@ app.post('/checkout', verifyToken, async(req, res) => {
     //rollback transaction if any errors occur
     await client.query('ROLLBACK');
     console.log(err);
+    if(err.message === 'Your cart is empty'){
+      return res.status(400).json({error: err.message});
+    }
     res.status(500).json({error: 'Checkout failed'})
   }finally{
     client.release();
