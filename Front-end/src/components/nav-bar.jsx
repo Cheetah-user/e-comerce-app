@@ -70,6 +70,7 @@ function Navbar() {
             
             {isLoggedIn ?(
                 <>
+                  <li><Link to="/orders">My Orders</Link></li>
                   <li className="navbar-item-user">Welcome!</li>
                    <li>
                      <button onClick={handleLogout} className="logoutbtn">
