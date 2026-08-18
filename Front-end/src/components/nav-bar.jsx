@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import './nav-bar.css';
 import { useState, useEffect } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function Navbar() {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,14 +20,14 @@ function Navbar() {
 
       try{
         //Gets the current user's cart
-        const initRes = await fetch('http://localhost:3000/carts/mine', {
+        const initRes = await fetch(`${API_BASE_URL}/carts/mine`, {
           headers: {'Authorization': `Bearer ${token}`}
         });
         if(!initRes.ok) return;
         const initData = await initRes.json();
         
         //Fetch cart content using cart id
-        const cartRes = await fetch(`http://localhost:3000/carts/${initData.cartId}`, {
+        const cartRes = await fetch(`${API_BASE_URL}/carts/${initData.cartId}`, {
           headers: {'Authorization': `Bearer ${token}`}
         });
         if(!cartRes.ok) return;
