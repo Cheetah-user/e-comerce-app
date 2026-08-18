@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode'; 
 import './checkout.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function Checkout() {
     const navigate = useNavigate();
     const [cartItems, setCartItems] = useState([]);
@@ -30,8 +31,7 @@ function Checkout() {
                 const decoded = jwtDecode(token);
                 const currentUserId = decoded.id;
 
-                
-                const profileRes = await fetch(`http://localhost:3000/customers/${currentUserId}`, {
+                const profileRes = await fetch(`${API_BASE_URL}/customers/${currentUserId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -53,13 +53,13 @@ function Checkout() {
                 }
 
                 
-                const initRes = await fetch('http://localhost:3000/carts/mine', {
+                const initRes = await fetch(`${API_BASE_URL}/carts/mine`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!initRes.ok) throw new Error();
                 const initData = await initRes.json();
 
-                const cartRes = await fetch(`http://localhost:3000/carts/${initData.cartId}`, {
+                const cartRes = await fetch(`${API_BASE_URL}/carts/${initData.cartId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!cartRes.ok) throw new Error();
@@ -96,8 +96,7 @@ function Checkout() {
             
             const decoded = jwtDecode(token);
             const currentUserId = decoded.id;
-
-            const updateProfileResponse = await fetch(`http://localhost:3000/customers/${currentUserId}`, {
+            const updateProfileResponse = await fetch(`${API_BASE_URL}/customers/${currentUserId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -111,7 +110,7 @@ function Checkout() {
                 })
             })
           
-            const response = await fetch('http://localhost:3000/checkout', {
+            const response = await fetch(`${API_BASE_URL}/checkout`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

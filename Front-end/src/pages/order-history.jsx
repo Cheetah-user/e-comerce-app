@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './order-history.css'
 
-
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function OrderHistory() {
     const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
@@ -19,7 +19,7 @@ function OrderHistory() {
 
             try {
                 
-                const response = await fetch('http://localhost:3000/orders', {
+                const response = await fetch(`${API_BASE_URL}/orders`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

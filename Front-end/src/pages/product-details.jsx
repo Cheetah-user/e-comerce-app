@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import './product-details.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function ProductDetails(){
     const {id} = useParams();
     const navigate = useNavigate();
@@ -15,7 +16,7 @@ function ProductDetails(){
     useEffect(() => {
         const fetchProductDetails = async () => {
             try{
-                const response = await fetch(`http://localhost:3000/products/${id}`);
+                const response = await fetch(`${API_BASE_URL}/products/${id}`);
 
                 if(!response.ok){
                     if(response.status === 404) throw new Error('Product not found');
@@ -45,7 +46,7 @@ function ProductDetails(){
         setSuccessMessage('');
 
         try{
-            const response = await fetch('http://localhost:3000/carts/items', {
+            const response = await fetch(`${API_BASE_URL}/carts/items`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

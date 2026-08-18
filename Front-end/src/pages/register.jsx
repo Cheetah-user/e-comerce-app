@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import { useNavigate } from "react-router";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function Register() {
     const [formData, setFormData] = useState({username: '', email: '', password: ''});
     const [message, setMessage] = useState('');
@@ -16,7 +17,7 @@ function Register() {
         setMessage('');
         setError(false);
         try {
-            const response = await fetch('http://localhost:3000/register', {
+            const response = await fetch(`${API_BASE_URL}/register`, {
                method: 'POST',
                headers: {
                 'Content-Type': 'application/json'

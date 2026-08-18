@@ -2,6 +2,7 @@ import React, {useState, useEffect} from "react";
 import { useNavigate } from "react-router";
 import { GoogleLogin } from '@react-oauth/google';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function Login() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({username: '', password: ''});
@@ -26,7 +27,7 @@ function Login() {
         setMessage('');
         setError(false);
         try{
-            const response = await fetch('http://localhost:3000/login', {
+            const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -55,7 +56,7 @@ function Login() {
         const googleToken = credentialResponse.credential; 
 
         // Send the token payload across the network to our new backend route
-         const response = await fetch('http://localhost:3000/auth/google', {
+         const response = await fetch(`${API_BASE_URL}/auth/google`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

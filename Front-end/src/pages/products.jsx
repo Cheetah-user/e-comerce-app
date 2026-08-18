@@ -3,6 +3,7 @@ import React from "react";
 import './products.css';
 import { Link } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function Products(){
     const [addingId, setAddingId] = useState(null);
     const [products, setProducts] = useState([]);
@@ -16,8 +17,8 @@ function Products(){
         const fetchStoreData = async () => {
             try {
                 const [productsRes, categoriesRes] = await Promise.all([
-                    fetch('http://localhost:3000/products'),
-                    fetch('http://localhost:3000/categories')
+                    fetch(`${API_BASE_URL}/products`),
+                    fetch(`${API_BASE_URL}/categories`)
                 ]);
                 
                 if(!productsRes.ok || !categoriesRes.ok){
@@ -47,7 +48,7 @@ function Products(){
         }
         setAddingId(productId);
         try{
-            const response = await fetch('http://localhost:3000/carts/items', {
+            const response = await fetch(`${API_BASE_URL}/carts/items`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

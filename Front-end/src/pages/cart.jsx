@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import './cart.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function Cart() {
    const navigate = useNavigate();
    const [cartId, setCartId] = useState(null);
@@ -23,7 +24,7 @@ function Cart() {
      const initializeAndFetchCart = async () => {
        try {
        // Hit our new route which will never write dummy 0 values
-       const initRes = await fetch('http://localhost:3000/carts/mine', {
+       const initRes = await fetch(`${API_BASE_URL}/carts/mine`, {
            method: 'GET',
            headers: {
                'Authorization': `Bearer ${token}` 
@@ -50,7 +51,7 @@ function Cart() {
    }, [token, navigate]);
 
    const fetchCartDetails = async (id) => {
-    const response = await fetch(`http://localhost:3000/carts/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/carts/${id}`, {
         headers: {'Authorization': `Bearer ${token}`}
     });
     const data = await response.json();
@@ -60,7 +61,7 @@ function Cart() {
 
    const handleDecreaseQuantity = async (productId) => {
     try{
-        const response = await fetch(`http://localhost:3000/carts/${cartId}/items/${productId}`, {
+        const response = await fetch(`${API_BASE_URL}/carts/${cartId}/items/${productId}`, {
             method: 'DELETE',
             headers: {'Authorization': `Bearer ${token}`}
         });
@@ -77,7 +78,7 @@ function Cart() {
    const handleIncrement = async (productId, currentQuantity) => {
      const token = localStorage.getItem('token');
      try{
-        const response = await fetch('http://localhost:3000/carts/items', {
+        const response = await fetch(`${API_BASE_URL}/carts/items`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ function Cart() {
 
    const handleClearCart = async () => {
      try{
-       const response = await fetch(`http://localhost:3000/carts/${cartId}`, {
+       const response = await fetch(`${API_BASE_URL}/carts/${cartId}`, {
         method: 'DELETE',
         headers: {'Authorization': `Bearer ${token}`}
        });
